@@ -1,15 +1,9 @@
 from central_model import CentralModel
 
+from tqdm import tqdm
+
 import numpy as np
 from scipy.optimize import least_squares
-
-
-import sys
-from PyQt5.QtWidgets import QApplication
-
-## Set up windows for plotting.
-import pyqtgraph.opengl as gl
-from pyqtgraph.Qt import QtCore, QtGui
 
 def fun(params, target_values, grid_shape, image_dimensions, grid_dimensions, order, knot_method='open_uniform', min_basis_value = 1e-4):
     """Compute residuals.
@@ -36,11 +30,11 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     # B-spline parameters
-    grid_size = (100,100)
+    grid_size = (1000,1000)
     img_size = grid_size
     scale = 1
     order = 3
-    shape = (6,6,3)
+    shape = (12,12,3)
 
     target_values = np.random.normal(0, np.sqrt(np.average(grid_size)), np.prod(shape))
     target_values = np.reshape(target_values, shape)
@@ -49,6 +43,7 @@ if __name__ == '__main__':
 
     res = fun(x0.ravel(), target_values.ravel(), shape, img_size, grid_size, order)
 
+    print('Fitting started. This might take a while.')
     a = least_squares(fun, x0, verbose=2, args=(target_values.ravel(), shape, img_size, grid_size, order))
     target_values = np.reshape(target_values, (-1,3))
 
@@ -75,45 +70,16 @@ if __name__ == '__main__':
     pts_x = np.ndarray((np.product(img_size),3))
     pts_y = np.ndarray((np.product(img_size),3))
     pts_z = np.ndarray((np.product(img_size),3))
-    
+
+    print('Sampling from camera model.')
+    pbar = tqdm(total=img_size[0] * img_size[1])
     for u in range(img_size[0]):
         for v in range(img_size[1]):
             s = cm.sample(u, v)
             pts_x[u + v * img_size[0]] = np.array([u, v, s[0]])
             pts_y[u + v * img_size[0]] = np.array([u, v, s[1]])
             pts_z[u + v * img_size[0]] = np.array([u, v, s[2]])
+            pbar.update(1)
 
-    app = QApplication(sys.argv)
-    w = gl.GLViewWidget()
-    w.show()
-    g = gl.GLGridItem()
-    w.addItem(g)
-
-    ## Adds point to scatter plot.
-    ptcolor = np.ndarray((pts_x.shape[0], 4))
-    c = np.divide(np.subtract(pts_x[:,2], np.min(pts_x[:,2])), np.max(pts_x[:,2]) - np.min(pts_x[:,2]))
-    ptcolor[:,0] = c
-    ptcolor[:,1] = 0
-    ptcolor[:,2] = np.subtract(1, c)
-    ptcolor[:,3] = 1
-
-    ctrlcolor = np.full((ctrl.shape[0], 4), np.array([0, 1, 0, 1]))
-    tvcolor = np.full((ctrl.shape[0], 4), np.array([1, 1, 1, 1]))
-
-    scatterPlotItems = {}
-    scatterPlotItems['pts'] = gl.GLScatterPlotItem(pos=pts_x, color=ptcolor, size = 2)
-    scatterPlotItems['ctrl'] = gl.GLScatterPlotItem(pos=ctrl_x, color=ctrlcolor)
-    scatterPlotItems['tvs'] = gl.GLScatterPlotItem(pos=tv_x, color=tvcolor)
-    w.addItem(scatterPlotItems['pts'])
-    w.addItem(scatterPlotItems['ctrl'])
-    w.addItem(scatterPlotItems['tvs'])
-
-    dx = ctrl_x - tv_x
-
-    ## Start Qt event loop unless running in interactive mode.
-    if __name__ == '__main__':
-        import sys
-        if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
-            QtGui.QApplication.instance().exec_()
-
-    pass
+    np.savez('fitted_data.npz', ctrl_x, ctrl_y, ctrl_z, tv_x, tv_y, tv_z, pts_x, pts_y, pts_z)
+    print('Points saved. Feel free to stop the program.')
