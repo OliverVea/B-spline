@@ -15,21 +15,21 @@
             "name": "Python: Test",
             "type": "python",
             "request": "launch",
-            "program": "D:\\WindowsFolders\\Code\\Python\\CentralModel\\test.py",
+            "program": "${workspaceFolder}\\test.py",
             "console": "integratedTerminal"
         },
         {
             "name": "Python: Plot",
             "type": "python",
             "request": "launch",
-            "program": "D:\\WindowsFolders\\Code\\Python\\CentralModel\\plot_points.py",
+            "program": "${workspaceFolder}\\plot_points.py",
             "console": "integratedTerminal"
         },
         {
             "name": "Python: Fit",
             "type": "python",
             "request": "launch",
-            "program": "D:\\WindowsFolders\\Code\\Python\\CentralModel\\central_model_fit.py",
+            "program": "${workspaceFolder}\\central_model_fit.py",
             "console": "integratedTerminal"
         }
     ]

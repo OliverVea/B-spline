@@ -13,7 +13,7 @@ g = gl.GLGridItem()
 w.addItem(g)
 
 ## Load and format data.
-pts, ctrl = np.load('D:\\WindowsFolders\\Code\\Python\\CentralModel\\points.npz').values()
+pts, ctrl = np.load('points.npz').values()
 
 ## Adds point to scatter plot.
 ptcolor = np.ndarray((pts.shape[0], 4))
