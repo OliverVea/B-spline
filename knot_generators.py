@@ -11,7 +11,7 @@ def open_uniform(n, order, end_divergence=1e-10):
         t[-order:] = 1
     else:
         t[:order] = np.arange(-end_divergence * order, 0, end_divergence)
-        t[-order:] = np.arange(1, 1 + (order - 1) * end_divergence, end_divergence)
+        t[-order:] = np.arange(1, 1 + (order - 1) * end_divergence, end_divergence) + end_divergence
 
     t[order:-order] = np.arange(0, n - order + 1) / (n - order)
     return t

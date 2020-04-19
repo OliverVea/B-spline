@@ -22,8 +22,9 @@ cm = CentralModel(
     grid_dimensions=grid_size, 
     control_points=a, 
     order=order,
-    knot_method='uniform',
-    end_divergence=0.01
+    knot_method='open_uniform',
+    end_divergence=0.01,
+    min_basis_value=0
 )
 
 d = np.divide(np.subtract(grid_size, 1), np.subtract(shape[:-1], 1))
@@ -44,4 +45,4 @@ y = pts[:,:,0]
 x = np.array([[[i * scale, j * scale, y[i,j]] for j in range(int((img_size[1]) / scale))] for i in range(int((img_size[0]) / scale))])
 x = np.reshape(x, (-1,3))
 
-np.savez('D:\\WindowsFolders\\Code\\Python\\CentralModel\\points.npz', x, ctrl)
+np.savez('points.npz', x, ctrl)
