@@ -5,7 +5,7 @@ from tqdm import tqdm
 import numpy as np
 from scipy.optimize import least_squares
 
-def fun(params, target_values, grid_shape, image_dimensions, grid_dimensions, order, knot_method='open_uniform', min_basis_value = 1e-4):
+def fun(params, target_values, grid_shape, image_dimensions, grid_dimensions, order, knot_method='open_uniform', end_divergence = 0):
     """Compute residuals.
     
     Keyword arguments: \n
@@ -20,8 +20,7 @@ def fun(params, target_values, grid_shape, image_dimensions, grid_dimensions, or
         control_points=grid, 
         order=order,
         knot_method=knot_method,
-        min_basis_value=min_basis_value,
-        end_divergence=0)
+        end_divergence=end_divergence)
 
     grid_samples = cm.sample_grid().ravel()
     return target_values - grid_samples
@@ -30,21 +29,24 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     # B-spline parameters
-    grid_size = (1000,1000)
+    grid_size = (400,400)
     img_size = grid_size
     scale = 1
-    order = 3
-    shape = (12,12,3)
+    order = 4
+    shape = (6,6,3)
+    knot_method = 'open_uniform'
+    end_divergence = 0
+
 
     target_values = np.random.normal(0, np.sqrt(np.average(grid_size)), np.prod(shape))
     target_values = np.reshape(target_values, shape)
 
     x0 = target_values.reshape((-1,))
 
-    res = fun(x0.ravel(), target_values.ravel(), shape, img_size, grid_size, order)
+    res = fun(x0.ravel(), target_values.ravel(), shape, img_size, grid_size, order, knot_method, end_divergence)
 
     print('Fitting started. This might take a while.')
-    a = least_squares(fun, x0, verbose=2, args=(target_values.ravel(), shape, img_size, grid_size, order))
+    a = least_squares(fun, x0, verbose=2, args=(target_values.ravel(), shape, img_size, grid_size, order, knot_method, end_divergence))
     target_values = np.reshape(target_values, (-1,3))
 
     ctrl = a['x'].reshape((-1,3))
@@ -65,7 +67,7 @@ if __name__ == '__main__':
     tv_y[:,2] = target_values[:,1]
     tv_z[:,2] = target_values[:,2]
 
-    cm = CentralModel(img_size, grid_size, ctrl.reshape(shape), order)
+    cm = CentralModel(img_size, grid_size, ctrl.reshape(shape), order, knot_method, end_divergence=end_divergence)
 
     pts_x = np.ndarray((np.product(img_size),3))
     pts_y = np.ndarray((np.product(img_size),3))

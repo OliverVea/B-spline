@@ -39,6 +39,8 @@ class CentralModel:
 
         self.order = order
 
+        self.B = {}
+
         if knot_method == 'open_uniform':
             self.th = kg.open_uniform(self.n, order)
             self.tv = kg.open_uniform(self.m, order)
@@ -58,6 +60,9 @@ class CentralModel:
         t: Knot vector. \n
         x: Pixel coordinate of sample.   
         """
+        if (i, k, tuple(t), x) in self.B:
+            return self.B[(i, k, tuple(t), x)]
+
         # Equation 2
         if k == 0:
             if t[i] <= x < t[i + 1]:
@@ -83,7 +88,11 @@ class CentralModel:
         if term2b == 0:
             term2a = term2b = 1
         
-        return term1a/term1b * term1c + term2a/term2b * term2c
+        B = term1a/term1b * term1c + term2a/term2b * term2c
+
+        self.B[(i, k, tuple(t), x)] = B
+
+        return B
 
     def sample(self, u, v):
         """Used to sample the b-spline surface. \n
@@ -137,4 +146,3 @@ class CentralModel:
                 samples[i,j] = self.sample(pts[i,j,0], pts[i,j,1])
 
         return samples
-pass
