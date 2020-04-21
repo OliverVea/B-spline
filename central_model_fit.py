@@ -29,17 +29,26 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     # B-spline parameters
-    grid_size = (400,400)
+    grid_size = (1000,1000)
     img_size = grid_size
     scale = 1
-    order = 4
-    shape = (6,6,3)
+    order = 3
+    shape = (24,24,3)
     knot_method = 'open_uniform'
     end_divergence = 0
 
 
-    target_values = np.random.normal(0, np.sqrt(np.average(grid_size)), np.prod(shape))
-    target_values = np.reshape(target_values, shape)
+    #target_values = np.random.normal(0, np.sqrt(np.average(grid_size)), np.prod(shape))
+    #target_values = np.reshape(target_values, shape)
+
+    target_values = np.ndarray(shape)
+
+    omega = 4
+    amplitude = 100
+
+    for u in range(shape[0]):
+        for v in range(shape[0]):
+            target_values[u,v] = np.array([np.cos(np.sqrt(u^2 + v^2) * omega), 0, 0]) * amplitude
 
     x0 = target_values.reshape((-1,))
 

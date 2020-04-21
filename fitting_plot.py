@@ -26,13 +26,25 @@ ctrlcolor = np.full((ctrl_x.shape[0], 4), np.array([0, 1, 0, 1]))
 tvcolor = np.full((tv_x.shape[0], 4), np.array([1, 1, 1, 1]))
 
 scatterPlotItems = {}
-scatterPlotItems['pts'] = gl.GLScatterPlotItem(pos=pts_x, color=ptcolor, size = 2)
+#scatterPlotItems['pts'] = gl.GLScatterPlotItem(pos=pts_x, color=ptcolor, size = 2)
 scatterPlotItems['ctrl'] = gl.GLScatterPlotItem(pos=ctrl_x, color=ctrlcolor)
 scatterPlotItems['tvs'] = gl.GLScatterPlotItem(pos=tv_x, color=tvcolor)
-w.addItem(scatterPlotItems['pts'])
+#w.addItem(scatterPlotItems['pts'])
 w.addItem(scatterPlotItems['ctrl'])
 w.addItem(scatterPlotItems['tvs'])
 
+x = np.arange(0, 1000)
+y = np.arange(0, 1000)
+z = pts_x[:,2].reshape(1000,1000)
+c = ptcolor.reshape(1000,1000,4)
+
+surface = gl.GLSurfacePlotItem(
+    x, 
+    y, 
+    z, 
+    c)
+
+w.addItem(surface)
 
 ## Start Qt event loop unless running in interactive mode.
 if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):

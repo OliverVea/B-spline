@@ -22,7 +22,7 @@ cm = CentralModel(
     grid_dimensions=grid_size, 
     control_points=a, 
     order=order,
-    knot_method='open_uniform',
+    knot_method='uniform',
     end_divergence=0.01,
     min_basis_value=0
 )

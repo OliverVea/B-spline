@@ -132,8 +132,6 @@ class CentralModel:
         s = self.sample(u, v)
         return s / np.linalg.norm(s)
 
-    # TODO: Sample with vector of points.
-
     def sample_grid(self):
         xs = np.floor((self.grid_width - 1) / (self.n - 1) * np.arange(0, self.n))
         ys = np.floor((self.grid_height - 1) / (self.m - 1) * np.arange(0, self.m))
