@@ -7,8 +7,8 @@ def uniform(n, order):
 def open_uniform(n, order, end_divergence=1e-10):
     t = np.zeros((n + order + 1))
 
-    if end_divergence == 0:
-        t[-order:] = 1
+    if end_divergence == 0 or order == 1:
+        t[-order:] = 1 + end_divergence
     else:
         t[:order] = np.arange(-end_divergence * order, 0, end_divergence)
         t[-order:] = np.arange(1, 1 + (order - 1) * end_divergence, end_divergence) + end_divergence

@@ -43,8 +43,8 @@ class CentralModel:
         self.B = {}
 
         if knot_method == 'open_uniform':
-            self.th = kg.open_uniform(self.n, order)
-            self.tv = kg.open_uniform(self.m, order)
+            self.th = kg.open_uniform(self.n, order, end_divergence)
+            self.tv = kg.open_uniform(self.m, order, end_divergence)
 
         if knot_method == 'uniform':
             self.th = kg.uniform(self.n, order)

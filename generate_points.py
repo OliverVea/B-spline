@@ -6,22 +6,42 @@ from tqdm import tqdm
 from central_model import CentralModel, fit_central_model
 import utility as util
 
+import pyqtgraph as pg
+import pyqtgraph.opengl as gl
+from OpenGL.GL import glReadBuffer, GL_FRONT
+
+## GENERATION ##
+fit = True
+
 grid_size = (200, 200)
 img_size = (200, 200)
 
-order = 3
+order = 5
 shape = (6,6,3)
 
 knot_method = 'open_uniform'
 
-end_divergence = 0.01
+end_divergence = 1e-10
 min_basis_value = 0
+
+## PLOTTING ##
+# can be 'rotation', 'single' or 'none'. 
+export_option = 'single'
+image_name = '{}_{}'.format(order, fit)
+
+draw_as_surface = True
+
+draw_pts = True
+draw_ctrl = True
+draw_tv = True
+
+orbit = False
+
+frame_time = 1000/60 # in ms
 
 np.random.seed(0)
 target_values = np.random.normal(0, np.sqrt(np.average(grid_size)), np.prod(shape))
 target_values = np.reshape(target_values, shape)
-
-fit = False
 
 if fit:
     cm, results = fit_central_model(
@@ -39,10 +59,10 @@ else:
         img_size,
         grid_size,
         target_values,
-        order,
-        knot_method,
-        end_divergence,
-        min_basis_value
+        order=order,
+        knot_method=knot_method,
+        end_divergence=end_divergence,
+        min_basis_value=min_basis_value
     )
 
 d = np.divide(np.subtract(grid_size, 1), np.subtract(shape[:-1], 1))
@@ -67,4 +87,81 @@ y = pts[:,:,0]
 x = np.array([[[i, j, y[i,j]] for j in range(img_size[1])] for i in range(img_size[0])])
 x = np.reshape(x, (-1,3))
 
-np.savez('points.npz', x, ctrl, tv)
+# Make pyqtgraph window.
+app = pg.mkQApp()
+w = gl.GLViewWidget()
+w.show()
+
+## Adds point to scatter plot.
+if draw_pts:
+    ptcolor = np.ndarray((x.shape[0], 4))
+    c = np.divide(np.subtract(x[:,2], np.min(x[:,2])), np.max(x[:,2]) - np.min(x[:,2]))
+    ptcolor[:,0] = c
+    ptcolor[:,1] = 0
+    ptcolor[:,2] = np.subtract(1, c)
+    ptcolor[:,3] = 1
+
+    # Creates surface/pointcloud for the b-spline samples.
+    if draw_as_surface:
+        x1 = np.arange(np.max(x[:,0]) + 1)
+        x2 = np.arange(np.max(x[:,1]) + 1)
+        pts = gl.GLSurfacePlotItem(x1, x2, x[:,2].reshape(len(x1), len(x2)), colors=ptcolor)
+
+    else:
+        pts = gl.GLScatterPlotItem(pos=x, color=ptcolor, size=1)
+
+    w.addItem(pts)
+
+scatterPlotItems = {}
+
+# Creates points for the control points of the b-spline.
+if draw_ctrl:
+    ctrlcolor = np.full((ctrl.shape[0], 4), np.array([0, 1, 0, 1]))
+    scatterPlotItems['ctrl'] = gl.GLScatterPlotItem(pos=ctrl, color=ctrlcolor)
+    w.addItem(scatterPlotItems['ctrl'])
+
+# Creates points for the target points of the b-spline.
+if draw_tv:
+    tvcolor = np.full((ctrl.shape[0], 4), np.array([1, 1, 1, 1]))
+    scatterPlotItems['tv'] = gl.GLScatterPlotItem(pos=tv, color=tvcolor)
+    w.addItem(scatterPlotItems['tv'])
+
+# Orients camera in 3d.
+w.showFullScreen()
+centerpoint = np.average(x, axis=0)
+w.pan(centerpoint[0], centerpoint[1], centerpoint[2])
+w.setCameraPosition(distance=400)
+
+
+# Orbiting and image exporting.
+da = 0.2
+current_angle = 0
+i = 0
+def update():
+    global current_angle, da, i, export_option
+
+    if export_option == 'single':
+        w.grabFrameBuffer().save('images/{}.png'.format(image_name))
+        export_option = 'none'
+
+    if current_angle < 720 and export_option == 'rotation':
+        w.grabFrameBuffer().save('images/{}_{}.png'.format(image_name, i))
+        current_angle += da
+
+    if orbit:
+        w.orbit(da, 0)
+        
+    i += 1
+
+timera = pg.QtCore.QTimer()
+timera.timeout.connect(update)
+
+if export_option == 'rotation':
+    timera.start(1)
+else:
+    timera.start(frame_time)
+
+glReadBuffer(GL_FRONT) # A little bit of c-code in my lines
+
+# Executes application
+app.exec_()
