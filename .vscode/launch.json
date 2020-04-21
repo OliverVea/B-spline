@@ -15,7 +15,7 @@
             "name": "Python: Test",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}\\test.py",
+            "program": "${workspaceFolder}\\generate_points.py",
             "console": "integratedTerminal"
         },
         {

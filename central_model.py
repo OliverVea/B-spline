@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import least_squares
 
 import knot_generators as kg
 
@@ -121,19 +122,9 @@ class CentralModel:
                 res += np.multiply(aij, Bh[i] * Bv[j])
 
         return res
-    
-    def sample_normalized(self, u, v):
-        """Used to sample the b-spline surface. Returns a normalized direction. \n
-
-        Keyword arguments: \n
-        u: Horizontal pixel coordinate of sample. \n
-        v: Vertical pixel coordinate of sample. 
-        """
-        s = self.sample(u, v)
-        return s / np.linalg.norm(s)
 
     def sample_grid(self):
-        xs = np.floor((self.grid_width - 1) / (self.n - 1) * np.arange(0, self.n))
+        xs = np.floor((self.grid_width  - 1) / (self.n - 1) * np.arange(0, self.n))
         ys = np.floor((self.grid_height - 1) / (self.m - 1) * np.arange(0, self.m))
 
         pts = np.transpose(np.meshgrid(xs, ys))
@@ -144,3 +135,45 @@ class CentralModel:
                 samples[i,j] = self.sample(pts[i,j,0], pts[i,j,1])
 
         return samples
+
+def fit_central_model(target_values, img_shape, grid_shape, order = 3, knot_method = 'open_uniform', end_divergence = 0, min_basis_value = 1e-3, verbose = 0, initial_values = None):
+    if initial_values == None: 
+        initial_values = target_values
+
+    assert target_values.shape == initial_values.shape, 'target_values and initial_values must have the same shape.'
+
+    shape = target_values.shape
+
+    def fun(params, target_values, grid_shape, image_dimensions, grid_dimensions, order, knot_method, end_divergence, min_basis_value):
+        grid = np.reshape(params, grid_shape)
+
+        cm = CentralModel(
+            image_dimensions=image_dimensions, 
+            grid_dimensions=grid_dimensions, 
+            control_points=grid, 
+            order=order,
+            knot_method=knot_method,
+            end_divergence=end_divergence,
+            min_basis_value=min_basis_value)
+
+        grid_samples = cm.sample_grid().ravel()
+        return target_values - grid_samples
+
+    if verbose > 0:
+        print('Starting least squares fit.')
+        
+    result = least_squares(fun, initial_values.ravel(), verbose=verbose, args=(target_values.ravel(), shape, img_shape, grid_shape, order, knot_method, end_divergence, min_basis_value))
+    target_values = np.reshape(target_values, (-1,3))
+
+    ctrl = result['x'].reshape(shape)
+
+    cm = CentralModel(
+        image_dimensions=img_shape, 
+        grid_dimensions=grid_shape, 
+        control_points=ctrl, 
+        order=order,
+        knot_method=knot_method,
+        end_divergence=end_divergence,
+        min_basis_value=min_basis_value)
+
+    return cm, result
