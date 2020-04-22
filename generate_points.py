@@ -4,30 +4,28 @@ from mpl_toolkits import mplot3d
 from tqdm import tqdm
 
 from central_model import CentralModel, fit_central_model
-import utility as util
 
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 from OpenGL.GL import glReadBuffer, GL_FRONT
 
 ## GENERATION ##
-fit = True
+fit = False
 
 grid_size = (200, 200)
 img_size = (200, 200)
 
-order = 5
+order =1
 shape = (6,6,3)
 
-knot_method = 'open_uniform'
-
+knot_method = 'uniform' # 'uniform' or 'open_uniform'
+ 
 end_divergence = 1e-10
 min_basis_value = 0
 
 ## PLOTTING ##
-# can be 'rotation', 'single' or 'none'. 
-export_option = 'single'
-image_name = '{}_{}'.format(order, fit)
+export_option = 'single' # 'rotation', 'single' or 'none'. 
+image_name = '{}_{}_{}'.format(order, fit, knot_method)
 
 draw_as_surface = True
 

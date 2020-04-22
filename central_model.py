@@ -108,8 +108,8 @@ class CentralModel:
         v += (self.grid_height - self.image_height) / 2
         v /= self.grid_height - 1
 
-        Bh = np.array([self.__B__(i, self.order, self.tv, u) for i in range(self.n)])
-        Bv = np.array([self.__B__(j, self.order, self.th, v) for j in range(self.m)])
+        Bh = np.array([self.__B__(i, self.order, self.th, u) for i in range(self.n)])
+        Bv = np.array([self.__B__(j, self.order, self.tv, v) for j in range(self.m)])
 
         # Optimization
         vi = np.where(Bh >= self.min_basis_value)[0]
