@@ -95,6 +95,12 @@ class CentralModel:
 
         return B
 
+    def normalize(self, coord, grid_size, image_size):
+        t = coord + (grid_size - image_size) / 2
+        t /= grid_size - 1
+
+        return t
+
     def sample(self, u, v):
         """Used to sample the b-spline surface. \n
 
@@ -102,11 +108,8 @@ class CentralModel:
         u: Horizontal pixel coordinate of sample. \n
         v: Vertical pixel coordinate of sample. 
         """
-        u += (self.grid_width - self.image_width) / 2
-        u /= self.grid_width - 1
-
-        v += (self.grid_height - self.image_height) / 2
-        v /= self.grid_height - 1
+        u = self.normalize(u, self.grid_width, self.image_width)
+        v = self.normalize(v, self.grid_height, self.image_height)
 
         Bh = np.array([self.__B__(i, self.order, self.th, u) for i in range(self.n)])
         Bv = np.array([self.__B__(j, self.order, self.tv, v) for j in range(self.m)])
@@ -136,6 +139,22 @@ class CentralModel:
 
         return samples
 
+    def active_control_points(self, u, v):
+        is_even = lambda x: x % 2 == 0
+        
+        px = len(self.th) * self.normalize(u, self.grid_width, self.image_width)  
+        py = len(self.tv) * self.normalize(v, self.grid_height, self.image_height)
+
+        if is_even(self.order):
+            x = np.arange(np.ceil(-0.5*(self.order + 1)), np.ceil(0.5*self.order) + 1) + np.round(px)
+            y = np.arange(np.ceil(-0.5*(self.order + 1)), np.ceil(0.5*self.order) + 1) + np.round(py)
+
+        else:
+            x = np.arange(np.ceil(-0.5*self.order), np.ceil(0.5*self.order) + 1) + np.floor(px)
+            y = np.arange(np.ceil(-0.5*self.order), np.ceil(0.5*self.order) + 1) + np.floor(py)
+            
+        return np.transpose(np.meshgrid(x, y))
+    
 def fit_central_model(target_values, img_shape, grid_shape, order = 3, knot_method = 'open_uniform', end_divergence = 0, min_basis_value = 1e-3, verbose = 0, initial_values = None):
     if initial_values == None: 
         initial_values = target_values
@@ -177,3 +196,8 @@ def fit_central_model(target_values, img_shape, grid_shape, order = 3, knot_meth
         min_basis_value=min_basis_value)
 
     return cm, result
+
+if __name__ == '__main__':
+    cm = CentralModel((200,200), (300,300), np.zeros((6,6,3)), 4)
+
+    pts = cm.active_control_points(67, 0)

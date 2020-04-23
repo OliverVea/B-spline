@@ -12,10 +12,10 @@ from OpenGL.GL import glReadBuffer, GL_FRONT
 ## GENERATION ##
 fit = False
 
-grid_size = (200, 200)
+grid_shape = (200, 200)
 img_size = (200, 200)
 
-order =1
+order = 3
 shape = (6,6,3)
 
 knot_method = 'uniform' # 'uniform' or 'open_uniform'
@@ -38,14 +38,14 @@ orbit = False
 frame_time = 1000/60 # in ms
 
 np.random.seed(0)
-target_values = np.random.normal(0, np.sqrt(np.average(grid_size)), np.prod(shape))
+target_values = np.random.normal(0, np.sqrt(np.average(grid_shape)), np.prod(shape))
 target_values = np.reshape(target_values, shape)
 
 if fit:
     cm, results = fit_central_model(
         target_values,
         img_shape=img_size, 
-        grid_shape=grid_size, 
+        grid_shape=grid_shape, 
         order=order,
         knot_method=knot_method,
         end_divergence=end_divergence,
