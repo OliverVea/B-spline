@@ -1,7 +1,11 @@
 import numpy as np
 from scipy.optimize import least_squares
 
+from tqdm import tqdm
+
 import knot_generators as kg
+
+import multiprocessing
 
 # The implementation of this B-spline-based camera model is based on the description in the 
 # article "Generalized B-spline Camera Model" by Johannes Beck and Christoph Stiller.
@@ -139,6 +143,33 @@ class CentralModel:
 
         return samples
 
+    def task(self, i, pts, output):
+        #if i == 0: pts = tqdm(pts)
+        r = output.put(np.array([np.hstack([pt[0], self.sample(pt[1], pt[2])]) for pt in pts]))
+        #print('Thread {} done.'.format(i))
+
+    def sample_many(self, pts, threads):
+        results = multiprocessing.Queue()
+
+        _pts = np.ndarray((len(pts), 3))
+        _pts[:,0] = range(len(pts))
+        _pts[:,1:] = pts
+
+        split = np.split(_pts, threads)
+
+        processes = [multiprocessing.Process(target=self.task, args=(i, split[threads - i - 1], results)) for i in range(threads)]
+
+        for process in processes: 
+            process.start()
+
+        results = np.vstack([results.get() for i in range(threads)])
+        results = results[results[:,0].argsort()]
+
+        for process in processes: 
+            process.join()
+
+        return results[:,:-1]
+
     def active_control_points(self, u, v):
         is_even = lambda x: x % 2 == 0
         
@@ -197,7 +228,30 @@ def fit_central_model(target_values, img_shape, grid_shape, order = 3, knot_meth
 
     return cm, result
 
-if __name__ == '__main__':
-    cm = CentralModel((200,200), (300,300), np.zeros((6,6,3)), 4)
+import time
 
-    pts = cm.active_control_points(67, 0)
+if __name__ == '__main__':
+    x = np.arange(2000)
+    y = np.arange(2000)
+    pts = np.transpose(np.meshgrid(x,y)).reshape(-1, 2)
+
+    print('Test underway. It might take some time. Please wait...')
+
+    start = time.time()
+    cm = CentralModel((2000,2000), (2000,2000), np.random.normal(0, 1, (6,6,3)), 4)
+    _ = cm.sample_many(pts, 1)
+    end = time.time()
+
+    print('Non-threaded version used {%01d} s. ({%01d} iter/s)'.format(end - start, len(pts) / (end - start)))
+
+    start = time.time()
+    cm = CentralModel((2000,2000), (2000,2000), np.random.normal(0, 1, (6,6,3)), 4)
+    _ = cm.sample_many(pts, 16)
+    end = time.time()
+
+    print('Threaded version used {%01d} s. ({%01d} iter/s)'.format(end - start, len(pts) / (end - start)))
+
+    print(pts.shape)
+
+
+    pass
