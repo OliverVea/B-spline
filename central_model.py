@@ -200,8 +200,8 @@ class CentralModel:
 
         is_even = lambda x: x % 2 == 0
         
-        px = len(self.th) * self.normalize(u, self.grid_width, self.image_width)  
-        py = len(self.tv) * self.normalize(v, self.grid_height, self.image_height)
+        px = len(self.th) * self._normalize(u, self.grid_width, self.image_width)  
+        py = len(self.tv) * self._normalize(v, self.grid_height, self.image_height)
 
         if is_even(self.order):
             x = np.arange(np.ceil(-0.5*(self.order + 1)), np.ceil(0.5*self.order) + 1) + np.round(px)
