@@ -121,7 +121,7 @@ class CentralModel:
         u: Horizontal pixel coordinate of sample. \n
         v: Vertical pixel coordinate of sample. 
         """
-        assert isinstance(u, (int, float)) and isinstance(v, (int, float)), 'u and v must be numbers.'
+        assert not (isinstance(u, (np.ndarray, list)) or isinstance(v, (np.ndarray, list))) and all(np.isreal([u, v])), 'u and v must be numbers.'
 
         u = self._normalize(u, self.grid_width, self.image_width)
         v = self._normalize(v, self.grid_height, self.image_height)
@@ -196,7 +196,7 @@ class CentralModel:
         u: Horizontal pixel coordinate. \n
         v: Vertical pixel coordinate. 
         """
-        assert isinstance(u, (int, float)) and isinstance(v, (int, float)), 'u and v must be numbers.'
+        assert not (isinstance(u, (np.ndarray, list)) or isinstance(v, (np.ndarray, list))) and all(np.isreal([u, v])), 'u and v must be numbers.'
 
         is_even = lambda x: x % 2 == 0
         
@@ -318,7 +318,7 @@ if __name__ == '__main__':
         pts = []
 
         for i in range(n):
-            pts.append(cm.active_control_points(i * dim[0] / n, 100))
+            pts.append(cm.active_control_points(i * (dim[0] / (n-1)), 100))
             
 
     pass
