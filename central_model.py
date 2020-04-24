@@ -200,8 +200,16 @@ class CentralModel:
 
         is_even = lambda x: x % 2 == 0
         
-        px = len(self.th) * self._normalize(u, self.grid_width, self.image_width)  
-        py = len(self.tv) * self._normalize(v, self.grid_height, self.image_height)
+        dx = self._normalize(u, self.grid_width, self.image_width)
+        dy = self._normalize(v, self.grid_height, self.image_height)
+
+        px = (self.a.shape[0] - 1) * dx
+        py = (self.a.shape[1] - 1) * dy
+
+        between = lambda a, x, b: max(min(x,b),a)
+
+        px = between(np.floor(self.order / 2), px, self.a.shape[0] - 1 - np.floor(self.order / 2))
+        py = between(np.floor(self.order / 2), py, self.a.shape[1] - 1 - np.floor(self.order / 2))
 
         if is_even(self.order):
             x = np.arange(np.ceil(-0.5*(self.order + 1)), np.ceil(0.5*self.order) + 1) + np.round(px)
@@ -274,22 +282,43 @@ if __name__ == '__main__':
 
     shape = (500,500)
 
-    x = np.arange(shape[0])
-    y = np.arange(shape[1])
-    pts = np.transpose(np.meshgrid(x,y)).reshape(-1, 2)
+    ## Multithreading Test
+    if False:
+        x = np.arange(shape[0])
+        y = np.arange(shape[1])
+        pts = np.transpose(np.meshgrid(x,y)).reshape(-1, 2)
 
-    print('Test underway. It might take some time. Please wait...')
+        print('Test underway. It might take some time. Please wait...')
 
-    start = time.time()
-    cm = CentralModel(shape, shape, np.random.normal(0, 1, (6,6,3)), 4)
-    _ = cm.sample_many(pts, 16)
-    end = time.time()
+        start = time.time()
+        cm = CentralModel(shape, shape, np.random.normal(0, 1, (6,6,3)), 4)
+        _ = cm.sample_many(pts, 16)
+        end = time.time()
 
-    print('Threaded version used {:.2f} s. ({} iter/s)'.format(end - start, int(len(pts) / (end - start))))
+        print('Threaded version used {:.2f} s. ({} iter/s)'.format(end - start, int(len(pts) / (end - start))))
 
-    start = time.time()
-    cm = CentralModel(shape, shape, np.random.normal(0, 1, (6,6,3)), 4)
-    _ = cm.sample_many(pts, 1)
-    end = time.time()
+        start = time.time()
+        cm = CentralModel(shape, shape, np.random.normal(0, 1, (6,6,3)), 4)
+        _ = cm.sample_many(pts, 1)
+        end = time.time()
 
-    print('Non-threaded version used {:.2f} s. ({} iter/s)'.format(end - start, int(len(pts) / (end - start))))
+        print('Non-threaded version used {:.2f} s. ({} iter/s)'.format(end - start, int(len(pts) / (end - start))))
+    
+    ## Sparsity Test
+    if True:
+        dim = (200, 200)
+        grid = (5,5,3)
+
+        ctrl = np.random.normal(0, 1, grid)
+
+        cm = CentralModel(dim, dim, ctrl, 2)
+
+        n = 10
+
+        pts = []
+
+        for i in range(n):
+            pts.append(cm.active_control_points(i * dim[0] / n, 100))
+            
+
+    pass
