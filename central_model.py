@@ -101,7 +101,7 @@ class CentralModel:
 
         return B
 
-    def normalize(self, coord, grid_size, image_size):
+    def _normalize(self, coord, grid_size, image_size):
         """Returns normalized coordinates. \n
 
         Keyword arguments: \n
@@ -121,8 +121,10 @@ class CentralModel:
         u: Horizontal pixel coordinate of sample. \n
         v: Vertical pixel coordinate of sample. 
         """
-        u = self.normalize(u, self.grid_width, self.image_width)
-        v = self.normalize(v, self.grid_height, self.image_height)
+        assert isinstance(u, (int, float)) and isinstance(v, (int, float)), 'u and v must be numbers.'
+
+        u = self._normalize(u, self.grid_width, self.image_width)
+        v = self._normalize(v, self.grid_height, self.image_height)
 
         Bh = np.array([self.__B__(i, self.order, self.th, u) for i in range(self.n)])
         Bv = np.array([self.__B__(j, self.order, self.tv, v) for j in range(self.m)])
@@ -140,8 +142,7 @@ class CentralModel:
         return res
 
     def sample_grid(self):
-        """Used to sample the b-spline surface in the input coordinates corresponding to the control points. \n
-        """
+        """Used to sample the b-spline surface in the input coordinates corresponding to the control points."""
         xs = np.floor((self.grid_width  - 1) / (self.n - 1) * np.arange(0, self.n))
         ys = np.floor((self.grid_height - 1) / (self.m - 1) * np.arange(0, self.m))
 
@@ -163,6 +164,10 @@ class CentralModel:
         pts: (n, 2) array of pixel coordinates. \n
         threads: Amount of processes to spawn. 
         """
+
+        assert isinstance(pts, np.ndarray) and len(pts.shape) == 2 and pts.shape[1] == 2, '\'pts\' should be a numpy array of shape (n,2) containing the points for which to sample the b-spline.'
+        assert isinstance(threads, int) and threads >= 1, '\'threads\' should be a positive integer. Got object with type {}.'.format(type(threads))
+
         results = multiprocessing.Queue()
 
         _pts = np.ndarray((len(pts), 3))
@@ -191,6 +196,8 @@ class CentralModel:
         u: Horizontal pixel coordinate. \n
         v: Vertical pixel coordinate. 
         """
+        assert isinstance(u, (int, float)) and isinstance(v, (int, float)), 'u and v must be numbers.'
+
         is_even = lambda x: x % 2 == 0
         
         px = len(self.th) * self.normalize(u, self.grid_width, self.image_width)  
@@ -218,7 +225,7 @@ def fit_central_model(target_values, image_dimensions, grid_dimensions, order = 
     end_divergence: see CentralModel's initialization.\n
     min_basis_value: see CentralModel's initialization.\n
     verbose: Changes how much the function prints while running.\n
-    initial_values: Optional numpy array with the shape of 'target_values'. Provides the initial control points to the least squares solver.\n
+    initial_values: Optional numpy array with the shape of 'target_values'. Provides the initial control points to the least squares solver.
     """
     if initial_values == None: 
         initial_values = target_values
@@ -245,7 +252,7 @@ def fit_central_model(target_values, image_dimensions, grid_dimensions, order = 
     if verbose > 0:
         print('Starting least squares fit.')
         
-    result = least_squares(fun, initial_values.ravel(), verbose=verbose, args=(target_values.ravel(), shape, img_shape, grid_shape, order, knot_method, end_divergence, min_basis_value))
+    result = least_squares(fun, initial_values.ravel(), verbose=verbose, args=(target_values.ravel(), shape, image_dimensions, grid_dimensions, order, knot_method, end_divergence, min_basis_value))
     target_values = np.reshape(target_values, (-1,3))
 
     ctrl = result['x'].reshape(shape)
@@ -265,22 +272,24 @@ def fit_central_model(target_values, image_dimensions, grid_dimensions, order = 
 if __name__ == '__main__':
     import time
 
-    x = np.arange(2000)
-    y = np.arange(2000)
+    shape = (500,500)
+
+    x = np.arange(shape[0])
+    y = np.arange(shape[1])
     pts = np.transpose(np.meshgrid(x,y)).reshape(-1, 2)
 
     print('Test underway. It might take some time. Please wait...')
 
     start = time.time()
-    cm = CentralModel((2000,2000), (2000,2000), np.random.normal(0, 1, (6,6,3)), 4)
+    cm = CentralModel(shape, shape, np.random.normal(0, 1, (6,6,3)), 4)
     _ = cm.sample_many(pts, 16)
     end = time.time()
 
-    print('Threaded version used {} s. ({} iter/s)'.format(end - start, len(pts) / (end - start)))
+    print('Threaded version used {:.2f} s. ({} iter/s)'.format(end - start, int(len(pts) / (end - start))))
 
     start = time.time()
-    cm = CentralModel((2000,2000), (2000,2000), np.random.normal(0, 1, (6,6,3)), 4)
+    cm = CentralModel(shape, shape, np.random.normal(0, 1, (6,6,3)), 4)
     _ = cm.sample_many(pts, 1)
     end = time.time()
 
-    print('Non-threaded version used {} s. ({} iter/s)'.format(end - start, len(pts) / (end - start)))
+    print('Non-threaded version used {:.2f} s. ({} iter/s)'.format(end - start, int(len(pts) / (end - start))))

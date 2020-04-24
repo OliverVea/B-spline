@@ -10,15 +10,15 @@ import pyqtgraph.opengl as gl
 from OpenGL.GL import glReadBuffer, GL_FRONT
 
 ## GENERATION ##
-fit = False
+fit = True
 
-grid_shape = (200, 200)
-img_size = (200, 200)
+image_dimensions = (200, 200)
+grid_dimensions = (200, 200)
 
-order = 3
+order = 2
 shape = (6,6,3)
 
-knot_method = 'uniform' # 'uniform' or 'open_uniform'
+knot_method = 'open_uniform' # 'uniform' or 'open_uniform'
  
 end_divergence = 1e-10
 min_basis_value = 0
@@ -37,15 +37,15 @@ orbit = False
 
 frame_time = 1000/60 # in ms
 
-np.random.seed(0)
-target_values = np.random.normal(0, np.sqrt(np.average(grid_shape)), np.prod(shape))
+np.random.seed(2)
+target_values = np.random.normal(0, np.sqrt(np.average(image_dimensions)), np.prod(shape))
 target_values = np.reshape(target_values, shape)
 
 if fit:
     cm, results = fit_central_model(
         target_values,
-        img_shape=img_size, 
-        grid_shape=grid_shape, 
+        image_dimensions=image_dimensions, 
+        grid_dimensions=grid_dimensions, 
         order=order,
         knot_method=knot_method,
         end_divergence=end_divergence,
@@ -54,8 +54,8 @@ if fit:
     )
 else:
     cm = CentralModel(
-        img_size,
-        grid_size,
+        image_dimensions,
+        grid_dimensions,
         target_values,
         order=order,
         knot_method=knot_method,
@@ -63,8 +63,8 @@ else:
         min_basis_value=min_basis_value
     )
 
-d = np.divide(np.subtract(grid_size, 1), np.subtract(shape[:-1], 1))
-c = np.divide(np.subtract(grid_size, img_size), 2)
+d = np.divide(np.subtract(grid_dimensions, 1), np.subtract(shape[:-1], 1))
+c = np.divide(np.subtract(grid_dimensions, image_dimensions), 2)
 
 ctrl = np.round(np.array([[[i * d[0], j * d[1], cm.a[i,j,0]] for j in range(shape[1])] for i in range(shape[0])]))
 ctrl = np.reshape(ctrl, (-1, 3))
@@ -74,15 +74,15 @@ tv = np.round(np.array([[[i * d[0], j * d[1], target_values[i,j,0]] for j in ran
 tv = np.reshape(tv, (-1, 3))
 tv[:,:2] -= c
 
-pts = np.ndarray(grid_size + (3,))
+pts = np.ndarray(grid_dimensions + (3,))
 
-for u in tqdm(range(img_size[0])):
-    for v in range(img_size[1]):
+for u in tqdm(range(image_dimensions[0])):
+    for v in range(image_dimensions[1]):
         pts[u, v, :] = cm.sample(u, v)
 
 y = pts[:,:,0]
 
-x = np.array([[[i, j, y[i,j]] for j in range(img_size[1])] for i in range(img_size[0])])
+x = np.array([[[i, j, y[i,j]] for j in range(image_dimensions[1])] for i in range(image_dimensions[0])])
 x = np.reshape(x, (-1,3))
 
 # Make pyqtgraph window.
